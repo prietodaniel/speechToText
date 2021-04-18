@@ -7,99 +7,104 @@ Original file is located at
     https://colab.research.google.com/drive/1pkHspcY_dwDsx33F_iKKC9gVY64agy18
 """
 
-import speech_recognition as sr 
-import os 
+import speech_recognition as sr
+import os
 import sys
 
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 import sys
 import threading
 import time
 
 whole_text = ""
 
+
 def get_large_audio_transcription(entorno, path):
-    
-	"""
-    Splitting the large audio file into chunks
-    and apply speech recognition on each of these chunks
-    """
-	r = sr.Recognizer()
+    r = sr.Recognizer()
 
-	# open the audio file using pydub
-	sound = AudioSegment.from_wav(path)  
-	# split audio sound where silence is 700 miliseconds or more and get chunks
-	chunks = split_on_silence(sound,min_silence_len = 500,silence_thresh = sound.dBFS-14,keep_silence=500,)
+    # open the audio file using pydub
+    sound = AudioSegment.from_wav(path)
+    # split audio sound where silence is 700 miliseconds or more and get chunks
+    chunks = split_on_silence(
+        sound, min_silence_len=500, silence_thresh=sound.dBFS-14, keep_silence=500,)
 
-	folder_name = "audio-chunks"
-	# create a directory to store the audio chunks
-	if not os.path.isdir(folder_name):
-		os.mkdir(folder_name)
-	whole_text = ""
-    # process each chunk 
-	for i, audio_chunk in enumerate(chunks, start=1):
-		##ACA ACTUALIZO EL LABLE
-		entorno.label.setText("Conversion en progreso: {}/{}".format(i,len(chunks)))
-				
-		# export audio chunk and save it in
-		# the `folder_name` directory.
-		chunk_filename = os.path.join(folder_name, f"chunk{i}.wav")
-		audio_chunk.export(chunk_filename, format="wav")
-		# recognize the chunk
-		with sr.AudioFile(chunk_filename) as source:
-			audio_listened = r.record(source)
-			# try converting it to text
-			try:
-				text = r.recognize_google(audio_listened, language="es-ES")
-			except sr.UnknownValueError as e:
-				print("Error:", str(e))
-			else:
-				text = f"{text.capitalize()}. "
-				whole_text += text
-	# return the text for all chunks detected
-	#return whole_text
-	f = open("{}txt".format(path[:-3]),'a')
-	f.write(whole_text)
-	entorno.label.setText("Conversion Finalizada.")
-	f.close()
+    folder_name = "audio-chunks"
+    # create a directory to store the audio chunks
+    if not os.path.isdir(folder_name):
+        os.mkdir(folder_name)
+    whole_text = ""
+    # process each chunk
+    for i, audio_chunk in enumerate(chunks, start=1):
+        # ACA ACTUALIZO EL LABLE
+        entorno.label.setText(
+            "Conversion en progreso: {}/{}".format(i, len(chunks)))
+
+        # export audio chunk and save it in
+        # the `folder_name` directory.
+        chunk_filename = os.path.join(folder_name, f"chunk{i}.wav")
+        audio_chunk.export(chunk_filename, format="wav")
+        # recognize the chunk
+        with sr.AudioFile(chunk_filename) as source:
+            audio_listened = r.record(source)
+            # try converting it to text
+            try:
+                text = r.recognize_google(audio_listened, language="es-ES")
+            except sr.UnknownValueError as e:
+                print("Error:", str(e))
+            else:
+                text = f"{text.capitalize()}. "
+                whole_text += text
+    # return the text for all chunks detected
+    # return whole_text
+    f = open("{}txt".format(path[:-3]), 'a')
+    f.write(whole_text)
+    entorno.label.setText("Conversion Finalizada.")
+    f.close()
+
 
 class App(QWidget):
-	mensaje = "Por favor espere... La conversion esta por comenzar."
-	def __init__(self):
-		super().__init__()
-		self.title = 'SpeechToText - DP'
-		self.left = 10
-		self.top = 10
-		self.width = 640
-		self.height = 480
-		self.label = QLabel(self.mensaje, self)
-		self.initUI()
+    mensaje = "Por favor espere... La conversion esta por comenzar."
 
-	def initUI(self):
-		self.setWindowTitle(self.title)
-		self.setGeometry(self.left, self.top, self.width, self.height)
-		self.openFileNameDialog()
-		self.show()
-    
-	def openFileNameDialog(self):
-		options = QFileDialog.Options()
-		options |= QFileDialog.DontUseNativeDialog
-		fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
-		full_text = "asd"
-		if fileName:
-			print(fileName)
-			#x = threading.Thread(target=actualizarLabel, args=(self,1,))	
-			#x.start()
-			x = threading.Thread(target=get_large_audio_transcription, args=(self,fileName,))	
-			x.start()
-			#full_text = get_large_audio_transcription(path)
-			
+    def __init__(self):
+        super().__init__()
+        self.title = 'SpeechToText'
+        self.left = 700
+        self.top = 300
+        self.width = 600
+        self.height = 400
+        self.label = QLabel(self.mensaje, self)
+        self.label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.label.setAlignment(Qt.AlignCenter)
+        self.label.setStyleSheet("QLabel {background-color: red;}")
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+        self.openFileNameDialog()
+        self.show()
+
+    def openFileNameDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Escoger audio", "D:", "All Files (*.wav)", options=options)
+        print(fileName[0:-3])
+        if fileName:
+            print(fileName)
+            # x = threading.Thread(target=actualizarLabel, args=(self,1,))
+            # x.start()
+            x = threading.Thread(
+                target=get_large_audio_transcription, args=(self, fileName,))
+            x.start()
+        # full_text = get_large_audio_transcription(path)
+        else:
+            self.label.setText("No ha seleccionado nada.")
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
