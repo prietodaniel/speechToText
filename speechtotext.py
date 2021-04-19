@@ -5,6 +5,8 @@ import sys
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout,
+                             QComboBox, QApplication)
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import sys
@@ -12,9 +14,10 @@ import threading
 import time
 
 whole_text = ""
+idioma = "es-ES"
 
-def get_large_audio_transcription(entorno, path):
-	entorno.label.setText("Comenzando conversión...")
+def get_large_audio_transcription(entorno, path, lang):
+	entorno.label.setText("Comenzando conversión, preparando audio...")
 	r = sr.Recognizer()
 
 	# open the audio file using pydub
@@ -43,7 +46,7 @@ def get_large_audio_transcription(entorno, path):
 			audio_listened = r.record(source)
 			# try converting it to text
 			try:
-				text = r.recognize_google(audio_listened, language="es-ES")
+				text = r.recognize_google(audio_listened, language = "en-US")
 			except sr.UnknownValueError as e:
 				print("Error:", str(e))
 			else:
@@ -76,6 +79,14 @@ class App(QWidget):
 	def initUI(self):
 		hbox = QHBoxLayout()
 		vbox = QVBoxLayout()
+		
+		combo = QComboBox(self)
+		
+		combo.addItem('Español')
+		combo.addItem('Ingles')
+		
+		combo.activated[str].connect(self.onActivated)
+		
 		self.setWindowTitle(self.title)
 		self.setGeometry(self.left, self.top, self.width, self.height)
 		button = QPushButton('Seleccionar Archivo', self)
@@ -83,6 +94,7 @@ class App(QWidget):
 		button.move(100,70)
 		button.clicked.connect(self.on_click)
 		vbox.addWidget(self.label)
+		vbox.addWidget(combo)
 		vbox.addWidget(button)
 		self.setLayout(vbox)
 		self.setGeometry(300, 300, 350, 150)
@@ -91,7 +103,12 @@ class App(QWidget):
 	def on_click(self):
 		print('Seleccionando Archivo')
 		self.openFileNameDialog()
-
+		
+	def onActivated(self, text):
+		if text == "Ingles":
+			idioma = "ingles"
+		else:
+			idioma = "español"
 
 	def openFileNameDialog(self):
 		options = QFileDialog.Options()
@@ -104,7 +121,7 @@ class App(QWidget):
 			# x = threading.Thread(target=actualizarLabel, args=(self,1,))
 			# x.start()
 			x = threading.Thread(
-				target=get_large_audio_transcription, args=(self, fileName,))
+				target=get_large_audio_transcription, args=(self, fileName, idioma))
 			x.start()
 		# full_text = get_large_audio_transcription(path)
 		
