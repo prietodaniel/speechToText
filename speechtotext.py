@@ -1,4 +1,4 @@
-######
+######MP3listo
 
 import speech_recognition as sr
 import os
@@ -14,6 +14,9 @@ from PyQt5.QtCore import *
 import sys
 import threading
 import time
+
+from os import path
+from pydub import AudioSegment
 
 whole_text = ""
 idioma = "es-ES"
@@ -60,7 +63,6 @@ def get_large_audio_transcription(entorno, path, lang):
 	f.write(whole_text)
 	entorno.label.setText("Conversion Finalizada.\n Puede elegir otro archivo")
 	f.close()
-
 
 class App(QWidget):
 	mensaje = "Seleccione el archivo a convertir (debe estar en formato WAV)."
@@ -111,21 +113,39 @@ class App(QWidget):
 			idioma = "ingles"
 		else:
 			idioma = "español"
+	
+	def convertirMp3(self, src):
+		dst = src[0:-3] + "wav"
+		print(dst)
+		y = threading.Thread(target=self.convertirMP3, args=(src, dst))
+		y.start()
 
 	def openFileNameDialog(self):
 		options = QFileDialog.Options()
 		options |= QFileDialog.DontUseNativeDialog
 		fileName, _ = QFileDialog.getOpenFileName(
-			self, "Escoger audio", "F:", "All Files (*.wav)", options=options)
+			self, "Escoger audio", "F:", "All Files (*.wav *.mp3)", options=options)
 		print(fileName[0:-3])
+		extension = fileName[-3:]
 		if fileName:
-			print(fileName)
+			self.label.setText("Comenzando conversión, preparando audio...")
+			if extension == "wav":
+				x = threading.Thread(
+				target=get_large_audio_transcription, args=(self, fileName, idioma))
+				x.start()
+			elif extension == "mp3":
+				self.convertirMp3(fileName)
 			# x = threading.Thread(target=actualizarLabel, args=(self,1,))
 			# x.start()
-			x = threading.Thread(
-				target=get_large_audio_transcription, args=(self, fileName, idioma))
-			x.start()
+			
 		# full_text = get_large_audio_transcription(path)
+	
+	def convertirMP3(self, src, dst):
+		sound = AudioSegment.from_mp3(src)
+		sound.export(dst, format="wav")
+		x = threading.Thread(
+		target=get_large_audio_transcription, args=(self, dst, idioma))
+		x.start()
 		
 if __name__ == '__main__':
     app = QApplication(sys.argv)
