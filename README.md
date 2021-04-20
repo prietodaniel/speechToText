@@ -1,2 +1,4 @@
 # speechToText
-Software creado con python y qt, para convertir audios a texto.
+Software created with python and qt, to transcribe audios to text.
+
+At the moment, it only works for one language (spanish default but you can set language manually by changing "es-ES" to "en-US", for example.). It supports WAV/AIFF/FLAC.
