@@ -125,8 +125,6 @@ class App(QWidget):
 			x.start()
 		# full_text = get_large_audio_transcription(path)
 		
-
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
